@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JavaIDE</title>
+  
+  <!-- CodeMirror Editor CSS & JS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/comment/comment.min.js"></script>
+
+  <!-- CheerpJ WebAssembly Java Runtime -->
+  <script src="https://cjrtnc.leaningtech.com/3.0/cj3loader.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #1e1e2e;
+      color: #f8f8f2;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 12px;
+      gap: 12px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #282a36;
+      padding: 10px 16px;
+      border-radius: 8px;
+    }
+
+    .title-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .title-container h2 {
+      line-height: 1;
+      color: #ff79c6;
+    }
+
+    .credit-text {
+      font-size: 0.72rem;
+      color: #6272a4;
+      font-style: italic;
+    }
+
+    .status {
+      font-size: 0.9rem;
+      color: #f1fa8c;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      background: #50fa7b;
+      color: #282a36;
+      border: none;
+      padding: 8px 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: #bd93f9;
+    }
+
+    .main-container {
+      display: flex;
+      flex: 1;
+      gap: 0;
+      min-height: 0;
+      user-select: none;
+    }
+
+    .resizer {
+      width: 8px;
+      cursor: col-resize;
+      background: transparent;
+      transition: background 0.2s;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .resizer:hover, .resizer.dragging {
+      background: #6272a4;
+    }
+
+    .sidebar-section {
+      width: 260px;
+      min-width: 150px;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      background: #282a36;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .explorer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #44475a;
+      padding: 6px 10px;
+    }
+
+    .explorer-title {
+      font-size: 0.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .explorer-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .icon-btn {
+      background: transparent;
+      color: #f8f8f2;
+      border: 1px solid #6272a4;
+      padding: 2px 6px;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .icon-btn:hover {
+      background: #6272a4;
+    }
+
+    #sidebar-tree {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .folder-group {
+      margin-bottom: 2px;
+    }
+
+    .folder-header {
+      padding: 8px 12px;
+      background: #343746;
+      font-weight: bold;
+      font-size: 0.85rem;
+      color: #f1fa8c;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .folder-header:hover {
+      background: #44475a;
+    }
+
+    .folder-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .folder-icon {
+      font-size: 0.75rem;
+      width: 12px;
+      display: inline-block;
+      color: #8be9fd;
+    }
+
+    .item-actions {
+      display: none;
+      gap: 2px;
+    }
+
+    .folder-header:hover .item-actions,
+    .file-item:hover .item-actions {
+      display: flex;
+    }
+
+    .action-btn {
+      font-size: 0.7rem;
+      padding: 1px 4px;
+      background: #6272a4;
+      border: none;
+      border-radius: 3px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .action-btn:hover {
+      background: #bd93f9;
+      color: #282a36;
+    }
+
+    .action-btn.delete-btn:hover {
+      background: #ff5555;
+      color: #fff;
+    }
+
+    .file-list {
+      list-style: none;
+      padding: 2px 0 4px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .file-list.collapsed {
+      display: none;
+    }
+
+    .file-item {
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      cursor: pointer;
+      color: #f8f8f2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s;
+    }
+
+    .file-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-item:hover {
+      background: #44475a;
+    }
+
+    .file-item.active {
+      background: #6272a4;
+      font-weight: bold;
+      color: #ff79c6;
+    }
+
+    .context-menu {
+      position: absolute;
+      background: #282a36;
+      border: 1px solid #6272a4;
+      border-radius: 6px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      padding: 4px 0;
+      min-width: 130px;
+    }
+
+    .context-menu-item {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #f8f8f2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .context-menu-item:hover {
+      background: #6272a4;
+      color: #50fa7b;
+    }
+
+    .context-menu-item.danger:hover {
+      background: #ff5555;
+      color: #fff;
+    }
+
+    .editor-section, .output-section {
+      flex: 1;
+      min-width: 150px;
+      display: flex;
+      flex-direction: column;
+      background: #282a36;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      background: #44475a;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .CodeMirror {
+      height: 100% !important;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+    }
+
+    #output {
+      flex: 1;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      background: #191a21;
+      color: #f8f8f2;
+    }
+  </style>
+</head>
+<body onclick="hideContextMenu()">
+
+  <header>
+    <div class="title-container">
+      <h2>Java IDE</h2>
+      <span class="credit-text">Created with Google Gemini</span>
+    </div>
+    <span id="status" class="status" style="color: rgb(241, 250, 140);">Initializing Java Engine...</span>
+    <div class="toolbar">
+      <button id="run-btn" onclick="runCode()" disabled="">▶ Run Main</button>
+      <button class="secondary" onclick="saveSelfHTML()">💾 Save IDE State (.html)</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="sidebar-section" id="sidebar-pane">
+      <div class="explorer-header">
+        <span class="explorer-title">Explorer</span>
+        <div class="explorer-actions">
+          <button class="icon-btn" onclick="createNewFolder()" title="Create Package/Folder">+ Package</button>
+          <button class="icon-btn" onclick="createNewFile()" title="Create File">+ File</button>
+        </div>
+      </div>
+      <div id="sidebar-tree"><div class="folder-group"><div class="folder-header">
+          <span class="folder-label">
+            <span class="folder-icon">▼</span> 📦 DemoInput
+          </span>
+          <div class="item-actions">
+            <button class="action-btn" title="Rename package">✏️</button>
+            <button class="action-btn" title="Add File">+ File</button>
+          </div>
+        </div><ul class="file-list "><li class="file-item">
+            <span class="file-label">☕ Main.java</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li></ul></div><div class="folder-group"><div class="folder-header">
+          <span class="folder-label">
+            <span class="folder-icon">▼</span> 📦 DemoOOP
+          </span>
+          <div class="item-actions">
+            <button class="action-btn" title="Rename package">✏️</button>
+            <button class="action-btn" title="Add File">+ File</button>
+          </div>
+        </div><ul class="file-list "><li class="file-item active">
+            <span class="file-label">☕ Main.java</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li><li class="file-item">
+            <span class="file-label">☕ Calculator.java</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li></ul></div><div class="folder-group"><div class="folder-header">
+          <span class="folder-label">
+            <span class="folder-icon">▼</span> 📦 DemoFileIO
+          </span>
+          <div class="item-actions">
+            <button class="action-btn" title="Rename package">✏️</button>
+            <button class="action-btn" title="Add File">+ File</button>
+          </div>
+        </div><ul class="file-list "><li class="file-item">
+            <span class="file-label">☕ Main.java</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li><li class="file-item">
+            <span class="file-label">📄 sample.txt</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li></ul></div></div>
+    </div>
+
+    <div class="resizer" id="resizer-1"></div>
+
+    <div id="context-menu" class="context-menu" style="display: none;">
+      <div id="ctx-rename" class="context-menu-item">✏️ Rename</div>
+      <div id="ctx-delete" class="context-menu-item danger">🗑️ Delete</div>
+    </div>
+
+    <div class="editor-section" id="editor-pane">
+      <div id="editor-header" class="section-header">Editor — DemoOOP / Main.java</div>
+      <textarea id="code-editor" style="display: none;"></textarea>
+    </div>
+
+    <div class="resizer" id="resizer-2"></div>
+
+    <div class="output-section" id="output-pane">
+      <div class="section-header">Console Output</div>
+      <div id="output">Initializing Execution Engine...</div>
+    </div>
+  </div>
+
+  <!-- Custom Input Modal -->
+  <div id="input-modal" style="display: none; position: fixed; inset: 0px; background: rgba(0, 0, 0, 0.7); align-items: center; justify-content: center; z-index: 9999;">
+    <div style="background: #282a36; border: 1px solid #6272a4; padding: 18px; border-radius: 8px; width: 320px; display: flex; flex-direction: column; gap: 10px;">
+      <label id="input-modal-prompt" style="font-family: monospace; color: #f8f8f2; font-size: 14px;">Scanner Input: </label>
+      <input type="text" id="input-modal-field" style="background: #191a21; color: #f8f8f2; border: 1px solid #6272a4; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 14px;">
+      <button id="input-modal-submit" style="background: #50fa7b; color: #282a36; font-weight: bold; padding: 6px; border: none; border-radius: 4px; cursor: pointer;">Submit Input</button>
+    </div>
+  </div>
+
+  <!-- Embedded Projects JSON -->
+  <script id="embedded-projects" type="application/json">
+{
+  "DemoInput": {
+    "Main.java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        System.out.print(\"Enter your name: \");\n        String name = scanner.nextLine();\n        System.out.println(\"Hello, \" + name + \"! Welcome to Browser Java IDE.\");\n    }\n}"
+  },
+  "DemoStaticMethods": {
+    "Main.java": "public class Main {\n    public static void main(String[] args) {\n        int result = Calculator.add(15, 27);\n        System.out.println(\"Java Calculation Result: \" + result);\n    }\n}",
+    "Calculator.java": "public class Calculator {\n    public static int add(int a, int b) {\n        return a + b;\n    }\n    public static int multiply(int a, int b) {\n        return a * b;\n    }\n}"
+  },
+  "DemoFileIO": {
+    "Main.java": "import java.io.File;\nimport java.io.FileWriter;\nimport java.io.PrintWriter;\nimport java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        try {\n            // 1. Write data to a text file\n            FileWriter fw = new FileWriter(\"data.txt\");\n            PrintWriter pw = new PrintWriter(fw);\n            pw.println(\"Line 1: Hello from Java File I/O!\");\n            pw.println(\"Line 2: Interactive file writing works.\");\n            pw.close();\n            System.out.println(\"Successfully wrote to 'data.txt'.\");\n\n            // 2. Read data back from the file\n            File myFile = new File(\"data.txt\");\n            Scanner scanner = new Scanner(myFile);\n            System.out.println(\"\\n--- Reading 'data.txt' ---\");\n            while (scanner.hasNextLine()) {\n                System.out.println(scanner.nextLine());\n            }\n            scanner.close();\n        } catch (Exception e) {\n            System.out.println(\"Error: \" + e.getMessage());\n        }\n    }\n}",
+    "sample.txt": "This is a sample text file created in the workspace."
+  }
+}
+</script>
+
+  <script>
+    let isJavaReady = false;
+    let projects = {};
+    let collapsedFolders = {}; 
+    let activeProject = "";
+    let activeFile = "";
+
+    function updateRunButtonState() {
+      const runBtn = document.getElementById("run-btn");
+      const isJavaFile = activeFile.toLowerCase().endsWith(".java");
+      runBtn.disabled = !(isJavaReady && isJavaFile);
+    }
+
+    const editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
+      mode: "text/x-java",
+      theme: "dracula",
+      lineNumbers: true,
+      indentUnit: 4,
+      tabSize: 4,
+      indentWithTabs: false,
+      extraKeys: {
+        "Ctrl-/": "toggleComment",
+        "Cmd-/": "toggleComment",
+        "Alt-/": "toggleComment"
+      }
+    });
+
+    function initResizers() {
+      const resizer1 = document.getElementById("resizer-1");
+      const resizer2 = document.getElementById("resizer-2");
+      const sidebar = document.getElementById("sidebar-pane");
+      const editorPane = document.getElementById("editor-pane");
+      const outputPane = document.getElementById("output-pane");
+
+      let currentResizer = null;
+      let x = 0;
+      let leftWidth = 0;
+      let rightWidth = 0;
+
+      const onMouseDown = (e, resizer) => {
+        currentResizer = resizer;
+        x = e.clientX;
+        resizer.classList.add("dragging");
+
+        if (resizer === resizer1) {
+          leftWidth = sidebar.getBoundingClientRect().width;
+        } else if (resizer === resizer2) {
+          leftWidth = editorPane.getBoundingClientRect().width;
+          rightWidth = outputPane.getBoundingClientRect().width;
+        }
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      };
+
+      const onMouseMove = (e) => {
+        const dx = e.clientX - x;
+
+        if (currentResizer === resizer1) {
+          const newWidth = leftWidth + dx;
+          if (newWidth >= 150 && newWidth <= 500) {
+            sidebar.style.width = `${newWidth}px`;
+          }
+        } else if (currentResizer === resizer2) {
+          const newEditorWidth = leftWidth + dx;
+          const newOutputWidth = rightWidth - dx;
+
+          if (newEditorWidth >= 150 && newOutputWidth >= 150) {
+            editorPane.style.flex = "none";
+            outputPane.style.flex = "none";
+            editorPane.style.width = `${newEditorWidth}px`;
+            outputPane.style.width = `${newOutputWidth}px`;
+          }
+        }
+
+        editor.refresh();
+      };
+
+      const onMouseUp = () => {
+        if (currentResizer) currentResizer.classList.remove("dragging");
+        currentResizer = null;
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        editor.refresh();
+      };
+
+      resizer1.addEventListener("mousedown", (e) => onMouseDown(e, resizer1));
+      resizer2.addEventListener("mousedown", (e) => onMouseDown(e, resizer2));
+    }
+
+    initResizers();
+
+    try {
+      const container = document.getElementById("embedded-projects");
+      projects = JSON.parse(container.textContent);
+      
+      const firstProj = Object.keys(projects)[0];
+      if (firstProj) {
+        activeProject = firstProj;
+        activeFile = Object.keys(projects[firstProj])[0] || "";
+      }
+    } catch (err) {
+      projects = { "DefaultProject": { "Main.java": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello World\");\n    }\n}" } };
+      activeProject = "DefaultProject";
+      activeFile = "Main.java";
+    }
+
+    function createNewFolder() {
+      const folderName = prompt("Enter new package/folder name:");
+      if (!folderName) return;
+
+      const cleanName = folderName.trim().replace(/[^a-zA-Z0-9_\-]/g, "");
+      if (!cleanName) return alert("Invalid folder name.");
+      if (projects[cleanName]) return alert("A folder with this name already exists.");
+
+      projects[cleanName] = {
+        "Main.java": `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello from ${cleanName}!");\n    }\n}`
+      };
+
+      activeProject = cleanName;
+      activeFile = "Main.java";
+
+      editor.setValue(projects[activeProject][activeFile]);
+      renderSidebar();
+      updateHeader();
+      updateRunButtonState();
+    }
+
+    function createNewFile(targetProject = activeProject) {
+      if (!projects[targetProject]) return alert("Select or create a folder first.");
+
+      let fileName = prompt(`Create new file in '${targetProject}':`);
+      if (!fileName) return;
+
+      fileName = fileName.trim();
+      
+      if (projects[targetProject][fileName] !== undefined) {
+        return alert("File already exists.");
+      }
+
+      if (fileName.endsWith(".java")) {
+        const className = fileName.replace(".java", "");
+        projects[targetProject][fileName] = `public class ${className} {\n    \n}\n`;
+      } else {
+        projects[targetProject][fileName] = "";
+      }
+
+      collapsedFolders[targetProject] = false;
+      switchFile(targetProject, fileName);
+    }
+
+    function renameFolder(oldName) {
+      const newName = prompt(`Rename folder '${oldName}' to:`, oldName);
+      if (!newName || newName.trim() === oldName) return;
+
+      const cleanName = newName.trim().replace(/[^a-zA-Z0-9_\-]/g, "");
+      if (!cleanName || projects[cleanName]) return alert("Invalid or existing folder name.");
+
+      if (projects[activeProject] && projects[activeProject][activeFile] !== undefined) {
+        projects[activeProject][activeFile] = editor.getValue();
+      }
+
+      projects[cleanName] = projects[oldName];
+      delete projects[oldName];
+
+      if (activeProject === oldName) activeProject = cleanName;
+
+      renderSidebar();
+      updateHeader();
+      updateRunButtonState();
+    }
+
+    function renameFile(projectName, oldFileName) {
+      let newFileName = prompt(`Rename '${oldFileName}' to:`, oldFileName);
+      if (!newFileName || newFileName.trim() === oldFileName) return;
+
+      newFileName = newFileName.trim();
+
+      if (projects[projectName][newFileName] !== undefined) return alert("File already exists.");
+
+      if (projectName === activeProject && oldFileName === activeFile) {
+        projects[activeProject][activeFile] = editor.getValue();
+      }
+
+      projects[projectName][newFileName] = projects[projectName][oldFileName];
+      delete projects[projectName][oldFileName];
+
+      if (projectName === activeProject && activeFile === oldFileName) {
+        activeFile = newFileName;
+      }
+
+      renderSidebar();
+      updateHeader();
+      updateRunButtonState();
+    }
+
+    function deleteFolder(projName) {
+      if (!confirm(`Delete folder '${projName}' and all files?`)) return;
+
+      delete projects[projName];
+      const remainingProjects = Object.keys(projects);
+      if (remainingProjects.length > 0) {
+        activeProject = remainingProjects[0];
+        activeFile = Object.keys(projects[activeProject])[0] || "";
+        editor.setValue(projects[activeProject][activeFile] || "");
+      } else {
+        activeProject = "";
+        activeFile = "";
+        editor.setValue("// No active Java projects.");
+      }
+
+      renderSidebar();
+      updateHeader();
+      updateRunButtonState();
+    }
+
+    function deleteFile(projectName, fileName) {
+      if (!confirm(`Delete '${fileName}'?`)) return;
+
+      delete projects[projectName][fileName];
+
+      if (projectName === activeProject && fileName === activeFile) {
+        const remainingFiles = Object.keys(projects[projectName]);
+        if (remainingFiles.length > 0) {
+          activeFile = remainingFiles[0];
+          editor.setValue(projects[activeProject][activeFile]);
+        } else {
+          activeFile = "";
+          editor.setValue("// No files in this package.");
+        }
+      }
+
+      renderSidebar();
+      updateHeader();
+      updateRunButtonState();
+    }
+
+    function showContextMenu(e, type, projName, fileName = null) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const menu = document.getElementById("context-menu");
+      const ctxRename = document.getElementById("ctx-rename");
+      const ctxDelete = document.getElementById("ctx-delete");
+
+      menu.style.top = `${e.clientY}px`;
+      menu.style.left = `${e.clientX}px`;
+      menu.style.display = "flex";
+
+      if (type === "folder") {
+        ctxRename.onclick = () => { renameFolder(projName); hideContextMenu(); };
+        ctxDelete.onclick = () => { deleteFolder(projName); hideContextMenu(); };
+      } else if (type === "file") {
+        ctxRename.onclick = () => { renameFile(projName, fileName); hideContextMenu(); };
+        ctxDelete.onclick = () => { deleteFile(projName, fileName); hideContextMenu(); };
+      }
+    }
+
+    function hideContextMenu() {
+      document.getElementById("context-menu").style.display = "none";
+    }
+
+    function toggleFolder(projName) {
+      collapsedFolders[projName] = !collapsedFolders[projName];
+      renderSidebar();
+    }
+
+    function renderSidebar() {
+      const treeContainer = document.getElementById("sidebar-tree");
+      treeContainer.innerHTML = "";
+
+      for (const [projName, files] of Object.entries(projects)) {
+        const folderDiv = document.createElement("div");
+        folderDiv.className = "folder-group";
+
+        const isCollapsed = !!collapsedFolders[projName];
+        const arrow = isCollapsed ? "▶" : "▼";
+
+        const folderHeader = document.createElement("div");
+        folderHeader.className = "folder-header";
+        
+        folderHeader.innerHTML = `
+          <span class="folder-label">
+            <span class="folder-icon">${arrow}</span> 📦 ${projName}
+          </span>
+          <div class="item-actions">
+            <button class="action-btn" title="Rename package">✏️</button>
+            <button class="action-btn" title="Add File">+ File</button>
+          </div>
+        `;
+
+        folderHeader.onclick = () => toggleFolder(projName);
+        folderHeader.oncontextmenu = (e) => showContextMenu(e, "folder", projName);
+
+        const actionsDiv = folderHeader.querySelector(".item-actions");
+        const [renameBtn, addBtn] = actionsDiv.querySelectorAll(".action-btn");
+        
+        renameBtn.onclick = (e) => { e.stopPropagation(); renameFolder(projName); };
+        addBtn.onclick = (e) => { e.stopPropagation(); createNewFile(projName); };
+
+        folderDiv.appendChild(folderHeader);
+
+        const fileList = document.createElement("ul");
+        fileList.className = `file-list ${isCollapsed ? "collapsed" : ""}`;
+
+        for (const fileName of Object.keys(files)) {
+          const fileItem = document.createElement("li");
+          fileItem.className = "file-item";
+          if (projName === activeProject && fileName === activeFile) {
+            fileItem.classList.add("active");
+          }
+
+          const icon = fileName.endsWith(".java") ? "☕" : "📄";
+
+          fileItem.innerHTML = `
+            <span class="file-label">${icon} ${fileName}</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          `;
+
+          fileItem.onclick = (e) => { e.stopPropagation(); switchFile(projName, fileName); };
+          fileItem.oncontextmenu = (e) => showContextMenu(e, "file", projName, fileName);
+
+          const fileActions = fileItem.querySelector(".item-actions");
+          const [renameFileBtn, deleteFileBtn] = fileActions.querySelectorAll(".action-btn");
+
+          renameFileBtn.onclick = (e) => { e.stopPropagation(); renameFile(projName, fileName); };
+          deleteFileBtn.onclick = (e) => { e.stopPropagation(); deleteFile(projName, fileName); };
+
+          fileList.appendChild(fileItem);
+        }
+
+        folderDiv.appendChild(fileList);
+        treeContainer.appendChild(folderDiv);
+      }
+    }
+
+    if (projects[activeProject] && projects[activeProject][activeFile]) {
+      editor.setValue(projects[activeProject][activeFile]);
+    }
+    renderSidebar();
+    updateHeader();
+
+    editor.on("change", () => {
+      if (projects[activeProject] && projects[activeProject][activeFile] !== undefined) {
+        projects[activeProject][activeFile] = editor.getValue();
+      }
+    });
+
+    function updateHeader() {
+      document.getElementById("editor-header").textContent = `Editor — ${activeProject} / ${activeFile}`;
+      if (activeFile.endsWith(".java")) {
+        editor.setOption("mode", "text/x-java");
+      } else {
+        editor.setOption("mode", "text/plain");
+      }
+    }
+
+    function switchFile(projectName, fileName) {
+      if (projects[activeProject] && projects[activeProject][activeFile] !== undefined) {
+        projects[activeProject][activeFile] = editor.getValue();
+      }
+
+      activeProject = projectName;
+      activeFile = fileName;
+
+      editor.setValue(projects[activeProject][activeFile] || "");
+      renderSidebar();
+      updateHeader();
+      updateRunButtonState();
+    }
+
+    function appendOutput(text) {
+      const outputDiv = document.getElementById("output");
+      outputDiv.textContent += text;
+      outputDiv.scrollTop = outputDiv.scrollHeight;
+    }
+
+    function initEngine() {
+      isJavaReady = true;
+      document.getElementById("status").innerText = "Java Engine Ready";
+      document.getElementById("status").style.color = "#50fa7b";
+      document.getElementById("output").textContent = "Java Environment Ready. Click ▶ Run Main to execute.";
+      updateRunButtonState();
+    }
+
+    async function runCode() {
+      const outputDiv = document.getElementById("output");
+      outputDiv.textContent = "";
+
+      if (projects[activeProject] && projects[activeProject][activeFile] !== undefined) {
+        projects[activeProject][activeFile] = editor.getValue();
+      }
+
+      const currentFiles = projects[activeProject];
+      
+      try {
+        let userInput = "";
+        const activeCode = currentFiles[activeFile] || "";
+        if (activeCode.includes("Scanner") && activeCode.includes("System.in")) {
+          userInput = await requestUserInput("Enter input for Scanner:");
+          appendOutput(`[Input provided]: ${userInput}\n\n`);
+        }
+
+        appendOutput("Executing " + activeProject + " / " + activeFile + "...\n");
+        appendOutput("--------------------------------------------------\n");
+
+        const javaFiles = Object.keys(currentFiles).filter(f => f.endsWith(".java"));
+        const classNames = javaFiles.map(f => f.replace(".java", ""));
+        
+        let fullSource = "";
+        for (const fname of javaFiles) {
+          fullSource += currentFiles[fname] + "\n\n";
+        }
+
+        let jsExecutable = fullSource
+          .replace(/import java\.util\.Scanner;/g, "")
+          .replace(/import java\.io\..*;/g, "")
+          .replace(/public class /g, "class ")
+          .replace(/public static void main\(String\[\] args\)/g, "static main()")
+          .replace(/System\.out\.println\((.*?)\);/g, "javaLog($1);")
+          .replace(/System\.out\.print\((.*?)\);/g, "javaLog($1);")
+          .replace(/Scanner scanner = new Scanner\(System\.in\);/g, `let scanner = { nextLine: () => ${JSON.stringify(userInput)} };`);
+
+        const allTypes = ["int", "double", "float", "long", "short", "byte", "boolean", "char", "String", "void", ...classNames].join("|");
+        
+        // Clean method declarations
+        jsExecutable = jsExecutable.replace(new RegExp(`\\b(public|private|protected)?\\s*(static\\s+)?(${allTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(`, "g"), "$2$4(");
+        
+        // Clean function parameters
+        jsExecutable = jsExecutable.replace(new RegExp(`([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{`, "g"), (match, funcName, args) => {
+          if (!args.trim()) return `${funcName}() {`;
+          const cleanedArgs = args.split(',').map(arg => {
+            const parts = arg.trim().split(/\s+/);
+            return parts.length > 1 ? parts[parts.length - 1] : arg.trim();
+          }).join(', ');
+          return `${funcName}(${cleanedArgs}) {`;
+        });
+
+        // Clean variable type assignments
+        classNames.forEach(cls => {
+          const typeVarRegex = new RegExp(`\\b${cls}\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*=`, "g");
+          jsExecutable = jsExecutable.replace(typeVarRegex, "let $1 =");
+        });
+
+        jsExecutable = jsExecutable
+          .replace(/\b(int|String|double|boolean|float|long|short|byte|char|File|FileWriter|PrintWriter|Scanner)\b\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=/g, "let $2 =");
+
+        // Mock Java Virtual File I/O Classes
+        const fsMockHeader = `
+          class File {
+            constructor(path) { this.path = path; }
+          }
+          class FileWriter {
+            constructor(path, append = false) {
+              this.path = path;
+              this.append = append;
+              if (!this.append) window.virtualFS[this.path] = "";
+            }
+            write(str) {
+              window.virtualFS[this.path] = (window.virtualFS[this.path] || "") + str;
+            }
+            close() {}
+          }
+          class PrintWriter {
+            constructor(writer) {
+              this.writer = typeof writer === "string" ? new FileWriter(writer) : writer;
+            }
+            print(val) { this.writer.write(String(val)); }
+            println(val = "") { this.writer.write(String(val) + "\\n"); }
+            close() { this.writer.close(); }
+          }
+          class VirtualScanner {
+            constructor(source) {
+              if (source instanceof File) {
+                const content = window.virtualFS[source.path];
+                if (content === undefined) throw new Error("FileNotFoundException: " + source.path);
+                this.lines = content.split('\\n');
+                if (this.lines.length > 0 && this.lines[this.lines.length - 1] === "") this.lines.pop();
+              } else {
+                this.lines = [];
+              }
+              this.cursor = 0;
+            }
+            hasNextLine() { return this.cursor < this.lines.length; }
+            nextLine() { return this.lines[this.cursor++] || ""; }
+            close() {}
+          }
+        `;
+
+        jsExecutable = jsExecutable.replace(/new Scanner\(([^)]+)\)/g, (match, target) => {
+          if (target.trim() === "System.in") return match;
+          return `new VirtualScanner(${target})`;
+        });
+
+        // Sync local workspace files with virtual environment
+        window.virtualFS = {};
+        for (const [fname, fcontent] of Object.entries(currentFiles)) {
+          window.virtualFS[fname] = fcontent;
+        }
+
+        jsExecutable = fsMockHeader + "\n" + jsExecutable + `\nMain.main();`;
+
+        window.javaLog = function(val) {
+          appendOutput(val + "\n");
+        };
+
+        const execute = new Function(jsExecutable);
+        execute();
+
+        delete window.javaLog;
+
+        // Sync changes made to filesystem back to IDE editor sidebar
+        for (const [vPath, vContent] of Object.entries(window.virtualFS)) {
+          currentFiles[vPath] = vContent;
+        }
+        renderSidebar();
+
+        appendOutput("\n[Process completed successfully]");
+
+      } catch (err) {
+        appendOutput(`\nRuntime Error:\n${err.message}`);
+      }
+    }
+
+    function requestUserInput(promptText) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("input-modal");
+        const label = document.getElementById("input-modal-prompt");
+        const inputField = document.getElementById("input-modal-field");
+        const submitBtn = document.getElementById("input-modal-submit");
+
+        label.textContent = promptText || "Scanner requested input:";
+        inputField.value = "";
+        modal.style.display = "flex";
+
+        setTimeout(() => inputField.focus(), 50);
+
+        const handleSubmit = () => {
+          const val = inputField.value;
+          modal.style.display = "none";
+          submitBtn.removeEventListener("click", handleSubmit);
+          inputField.removeEventListener("keydown", handleKeyDown);
+          resolve(val);
+        };
+
+        const handleKeyDown = (e) => {
+          if (e.key === "Enter") handleSubmit();
+        };
+
+        submitBtn.addEventListener("click", handleSubmit);
+        inputField.addEventListener("keydown", handleKeyDown);
+      });
+    }
+
+    function saveSelfHTML() {
+      if (projects[activeProject] && projects[activeProject][activeFile] !== undefined) {
+        projects[activeProject][activeFile] = editor.getValue();
+      }
+
+      const docClone = document.documentElement.cloneNode(true);
+
+      const cmWrapper = docClone.querySelector(".CodeMirror");
+      if (cmWrapper) cmWrapper.remove();
+
+      const textarea = docClone.querySelector("#code-editor");
+      if (textarea) textarea.value = "";
+
+      const embeddedScript = docClone.querySelector("#embedded-projects");
+      if (embeddedScript) {
+        embeddedScript.textContent = "\n" + JSON.stringify(projects, null, 2) + "\n";
+      }
+
+      const outputDiv = docClone.querySelector("#output");
+      if (outputDiv) outputDiv.textContent = "Initializing Execution Engine...";
+
+      const statusSpan = docClone.querySelector("#status");
+      if (statusSpan) {
+        statusSpan.textContent = "Initializing Java Engine...";
+        statusSpan.style.color = "#f1fa8c";
+      }
+
+      const runBtn = docClone.querySelector("#run-btn");
+      if (runBtn) runBtn.disabled = true;
+
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(-2);
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const dateString = `${yy}${mm}${dd}`;
+
+      const filename = `java_ide_${dateString}.html`;
+      const updatedHTML = "<!DOCTYPE html>\n" + docClone.outerHTML;
+      const blob = new Blob([updatedHTML], { type: "text/html" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }
+
+    initEngine();
+  </script>
+
+</body></html>

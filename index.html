@@ -361,61 +361,7 @@
           <button class="icon-btn" onclick="createNewFile()" title="Create File">+ File</button>
         </div>
       </div>
-      <div id="sidebar-tree"><div class="folder-group"><div class="folder-header">
-          <span class="folder-label">
-            <span class="folder-icon">▼</span> 📦 DemoInput
-          </span>
-          <div class="item-actions">
-            <button class="action-btn" title="Rename package">✏️</button>
-            <button class="action-btn" title="Add File">+ File</button>
-          </div>
-        </div><ul class="file-list "><li class="file-item">
-            <span class="file-label">☕ Main.java</span>
-            <div class="item-actions">
-              <button class="action-btn" title="Rename file">✏️</button>
-              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
-            </div>
-          </li></ul></div><div class="folder-group"><div class="folder-header">
-          <span class="folder-label">
-            <span class="folder-icon">▼</span> 📦 DemoOOP
-          </span>
-          <div class="item-actions">
-            <button class="action-btn" title="Rename package">✏️</button>
-            <button class="action-btn" title="Add File">+ File</button>
-          </div>
-        </div><ul class="file-list "><li class="file-item active">
-            <span class="file-label">☕ Main.java</span>
-            <div class="item-actions">
-              <button class="action-btn" title="Rename file">✏️</button>
-              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
-            </div>
-          </li><li class="file-item">
-            <span class="file-label">☕ Calculator.java</span>
-            <div class="item-actions">
-              <button class="action-btn" title="Rename file">✏️</button>
-              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
-            </div>
-          </li></ul></div><div class="folder-group"><div class="folder-header">
-          <span class="folder-label">
-            <span class="folder-icon">▼</span> 📦 DemoFileIO
-          </span>
-          <div class="item-actions">
-            <button class="action-btn" title="Rename package">✏️</button>
-            <button class="action-btn" title="Add File">+ File</button>
-          </div>
-        </div><ul class="file-list "><li class="file-item">
-            <span class="file-label">☕ Main.java</span>
-            <div class="item-actions">
-              <button class="action-btn" title="Rename file">✏️</button>
-              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
-            </div>
-          </li><li class="file-item">
-            <span class="file-label">📄 sample.txt</span>
-            <div class="item-actions">
-              <button class="action-btn" title="Rename file">✏️</button>
-              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
-            </div>
-          </li></ul></div></div>
+      <div id="sidebar-tree"></div>
     </div>
 
     <div class="resizer" id="resizer-1"></div>
@@ -426,7 +372,7 @@
     </div>
 
     <div class="editor-section" id="editor-pane">
-      <div id="editor-header" class="section-header">Editor — DemoOOP / Main.java</div>
+      <div id="editor-header" class="section-header">Editor — DemoInput / Main.java</div>
       <textarea id="code-editor" style="display: none;"></textarea>
     </div>
 
@@ -451,14 +397,14 @@
   <script id="embedded-projects" type="application/json">
 {
   "DemoInput": {
-    "Main.java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        System.out.print(\"Enter your name: \");\n        String name = scanner.nextLine();\n        System.out.println(\"Hello, \" + name + \"! Welcome to Browser Java IDE.\");\n    }\n}"
+    "Main.java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        \n        System.out.print(\"Enter first number: \");\n        int num1 = scanner.nextInt();\n        \n        System.out.print(\"Enter second number: \");\n        int num2 = scanner.nextInt();\n        \n        System.out.println(\"Sum: \" + (num1 + num2));\n    }\n}"
   },
   "DemoStaticMethods": {
     "Main.java": "public class Main {\n    public static void main(String[] args) {\n        int result = Calculator.add(15, 27);\n        System.out.println(\"Java Calculation Result: \" + result);\n    }\n}",
     "Calculator.java": "public class Calculator {\n    public static int add(int a, int b) {\n        return a + b;\n    }\n    public static int multiply(int a, int b) {\n        return a * b;\n    }\n}"
   },
   "DemoFileIO": {
-    "Main.java": "import java.io.File;\nimport java.io.FileWriter;\nimport java.io.PrintWriter;\nimport java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        try {\n            // 1. Write data to a text file\n            FileWriter fw = new FileWriter(\"data.txt\");\n            PrintWriter pw = new PrintWriter(fw);\n            pw.println(\"Line 1: Hello from Java File I/O!\");\n            pw.println(\"Line 2: Interactive file writing works.\");\n            pw.close();\n            System.out.println(\"Successfully wrote to 'data.txt'.\");\n\n            // 2. Read data back from the file\n            File myFile = new File(\"data.txt\");\n            Scanner scanner = new Scanner(myFile);\n            System.out.println(\"\\n--- Reading 'data.txt' ---\");\n            while (scanner.hasNextLine()) {\n                System.out.println(scanner.nextLine());\n            }\n            scanner.close();\n        } catch (Exception e) {\n            System.out.println(\"Error: \" + e.getMessage());\n        }\n    }\n}",
+    "Main.java": "import java.io.File;\nimport java.io.PrintWriter;\nimport java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        try {\n            File file = new File(\"data.txt\");\n            PrintWriter pw = new PrintWriter(file);\n            pw.println(\"Line 1: Hello from Java File I/O!\");\n            pw.println(\"Line 2: Interactive file writing works.\");\n            pw.close();\n            System.out.println(\"Successfully wrote to 'data.txt'.\");\n\n            Scanner scanner = new Scanner(file);\n            System.out.println(\"\\n--- Reading 'data.txt' ---\");\n            while (scanner.hasNextLine()) {\n                System.out.println(scanner.nextLine());\n            }\n            scanner.close();\n        } catch (Exception e) {\n            System.out.println(\"Error: \" + e.getMessage());\n        }\n    }\n}",
     "sample.txt": "This is a sample text file created in the workspace."
   }
 }
@@ -470,6 +416,7 @@
     let collapsedFolders = {}; 
     let activeProject = "";
     let activeFile = "";
+    let pendingPrompt = ""; // Captures System.out.print strings for the input dialog
 
     function updateRunButtonState() {
       const runBtn = document.getElementById("run-btn");
@@ -645,7 +592,7 @@
       if (projects[projectName][newFileName] !== undefined) return alert("File already exists.");
 
       if (projectName === activeProject && oldFileName === activeFile) {
-        projects[activeProject][activeFile] = editor.getValue();
+        projects[activeProject][oldFileName] = editor.getValue();
       }
 
       projects[projectName][newFileName] = projects[projectName][oldFileName];
@@ -855,6 +802,7 @@
     async function runCode() {
       const outputDiv = document.getElementById("output");
       outputDiv.textContent = "";
+      pendingPrompt = "";
 
       if (projects[activeProject] && projects[activeProject][activeFile] !== undefined) {
         projects[activeProject][activeFile] = editor.getValue();
@@ -863,13 +811,6 @@
       const currentFiles = projects[activeProject];
       
       try {
-        let userInput = "";
-        const activeCode = currentFiles[activeFile] || "";
-        if (activeCode.includes("Scanner") && activeCode.includes("System.in")) {
-          userInput = await requestUserInput("Enter input for Scanner:");
-          appendOutput(`[Input provided]: ${userInput}\n\n`);
-        }
-
         appendOutput("Executing " + activeProject + " / " + activeFile + "...\n");
         appendOutput("--------------------------------------------------\n");
 
@@ -885,17 +826,18 @@
           .replace(/import java\.util\.Scanner;/g, "")
           .replace(/import java\.io\..*;/g, "")
           .replace(/public class /g, "class ")
-          .replace(/public static void main\(String\[\] args\)/g, "static main()")
+          .replace(/public static void main\(String\[\] args\)/g, "static async main()")
           .replace(/System\.out\.println\((.*?)\);/g, "javaLog($1);")
-          .replace(/System\.out\.print\((.*?)\);/g, "javaLog($1);")
-          .replace(/Scanner scanner = new Scanner\(System\.in\);/g, `let scanner = { nextLine: () => ${JSON.stringify(userInput)} };`);
+          .replace(/System\.out\.print\((.*?)\);/g, "javaLogNoNL($1);")
+          .replace(/Integer\.parseInt\((.*?)\)/g, "parseInt($1)")
+          .replace(/\.nextInt\(\)/g, ".nextInt()")
+          .replace(/\.nextDouble\(\)/g, ".nextDouble()")
+          .replace(/\.nextLine\(\)/g, ".nextLine()");
 
         const allTypes = ["int", "double", "float", "long", "short", "byte", "boolean", "char", "String", "void", ...classNames].join("|");
         
-        // Clean method declarations
         jsExecutable = jsExecutable.replace(new RegExp(`\\b(public|private|protected)?\\s*(static\\s+)?(${allTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(`, "g"), "$2$4(");
         
-        // Clean function parameters
         jsExecutable = jsExecutable.replace(new RegExp(`([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{`, "g"), (match, funcName, args) => {
           if (!args.trim()) return `${funcName}() {`;
           const cleanedArgs = args.split(',').map(arg => {
@@ -905,7 +847,6 @@
           return `${funcName}(${cleanedArgs}) {`;
         });
 
-        // Clean variable type assignments
         classNames.forEach(cls => {
           const typeVarRegex = new RegExp(`\\b${cls}\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*=`, "g");
           jsExecutable = jsExecutable.replace(typeVarRegex, "let $1 =");
@@ -914,8 +855,58 @@
         jsExecutable = jsExecutable
           .replace(/\b(int|String|double|boolean|float|long|short|byte|char|File|FileWriter|PrintWriter|Scanner)\b\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=/g, "let $2 =");
 
-        // Mock Java Virtual File I/O Classes
+        jsExecutable = jsExecutable
+          .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextInt\(\)/g, "await $1.nextInt()")
+          .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextDouble\(\)/g, "await $1.nextDouble()")
+          .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextLine\(\)/g, "await $1.nextLine()");
+
         const fsMockHeader = `
+          class InteractiveScanner {
+            constructor() {
+              this.tokens = [];
+            }
+            async _ensureToken() {
+              while (this.tokens.length === 0) {
+                let promptMsg = pendingPrompt || "Scanner input requested:";
+                pendingPrompt = "";
+                let input = await requestUserInput(promptMsg);
+                if (input === null) return null;
+                appendOutput(input + "\\n");
+                let parts = input.trim().split(/\\s+/).filter(Boolean);
+                if (parts.length > 0) {
+                  this.tokens.push(...parts);
+                } else {
+                  this.tokens.push("");
+                }
+              }
+            }
+            async nextInt() {
+              await this._ensureToken();
+              let val = this.tokens.shift();
+              return parseInt(val, 10) || 0;
+            }
+            async nextDouble() {
+              await this._ensureToken();
+              let val = this.tokens.shift();
+              return parseFloat(val) || 0.0;
+            }
+            async nextLine() {
+              if (this.tokens.length > 0) {
+                let line = this.tokens.join(" ");
+                this.tokens = [];
+                return line;
+              }
+              let promptMsg = pendingPrompt || "Scanner input requested:";
+              pendingPrompt = "";
+              let input = await requestUserInput(promptMsg);
+              appendOutput((input || "") + "\\n");
+              return input || "";
+            }
+            hasNextLine() {
+              return true;
+            }
+            close() {}
+          }
           class File {
             constructor(path) { this.path = path; }
           }
@@ -931,18 +922,18 @@
             close() {}
           }
           class PrintWriter {
-            constructor(writer) {
-              this.writer = typeof writer === "string" ? new FileWriter(writer) : writer;
+            constructor(target) {
+              this.path = typeof target === "string" ? target : (target.path || "output.txt");
+              window.virtualFS[this.path] = "";
             }
-            print(val) { this.writer.write(String(val)); }
-            println(val = "") { this.writer.write(String(val) + "\\n"); }
-            close() { this.writer.close(); }
+            print(val) { window.virtualFS[this.path] = (window.virtualFS[this.path] || "") + String(val); }
+            println(val = "") { window.virtualFS[this.path] = (window.virtualFS[this.path] || "") + String(val) + "\\n"; }
+            close() {}
           }
           class VirtualScanner {
             constructor(source) {
               if (source instanceof File) {
-                const content = window.virtualFS[source.path];
-                if (content === undefined) throw new Error("FileNotFoundException: " + source.path);
+                const content = window.virtualFS[source.path] || "";
                 this.lines = content.split('\\n');
                 if (this.lines.length > 0 && this.lines[this.lines.length - 1] === "") this.lines.pop();
               } else {
@@ -950,35 +941,54 @@
               }
               this.cursor = 0;
             }
-            hasNextLine() { return this.cursor < this.lines.length; }
-            nextLine() { return this.lines[this.cursor++] || ""; }
+            async nextInt() {
+              let line = this.nextLine();
+              return parseInt(line, 10) || 0;
+            }
+            async nextDouble() {
+              let line = this.nextLine();
+              return parseFloat(line) || 0.0;
+            }
+            async nextLine() {
+              return this.lines[this.cursor++] || "";
+            }
+            hasNextLine() {
+              return this.cursor < this.lines.length;
+            }
             close() {}
           }
         `;
 
+        jsExecutable = jsExecutable.replace(/new Scanner\(System\.in\)/g, `new InteractiveScanner()`);
         jsExecutable = jsExecutable.replace(/new Scanner\(([^)]+)\)/g, (match, target) => {
           if (target.trim() === "System.in") return match;
           return `new VirtualScanner(${target})`;
         });
 
-        // Sync local workspace files with virtual environment
         window.virtualFS = {};
         for (const [fname, fcontent] of Object.entries(currentFiles)) {
           window.virtualFS[fname] = fcontent;
         }
 
-        jsExecutable = fsMockHeader + "\n" + jsExecutable + `\nMain.main();`;
+        jsExecutable = fsMockHeader + "\n" + jsExecutable + `\nreturn Main.main();`;
 
         window.javaLog = function(val) {
+          pendingPrompt = "";
           appendOutput(val + "\n");
         };
 
-        const execute = new Function(jsExecutable);
-        execute();
+        window.javaLogNoNL = function(val) {
+          pendingPrompt = String(val);
+          appendOutput(val);
+        };
+
+        const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+        const execute = new AsyncFunction(jsExecutable);
+        await execute();
 
         delete window.javaLog;
+        delete window.javaLogNoNL;
 
-        // Sync changes made to filesystem back to IDE editor sidebar
         for (const [vPath, vContent] of Object.entries(window.virtualFS)) {
           currentFiles[vPath] = vContent;
         }

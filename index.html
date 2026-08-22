@@ -10,6 +10,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/comment/comment.min.js"></script>
+  <!-- Auto Close Brackets Addon -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
 
   <!-- CheerpJ WebAssembly Java Runtime -->
   <script src="https://cjrtnc.leaningtech.com/3.0/cj3loader.js"></script>
@@ -345,9 +347,9 @@
       <h2>Java IDE</h2>
       <span class="credit-text">Created with Google Gemini</span>
     </div>
-    <span id="status" class="status" style="color: rgb(241, 250, 140);">Initializing Java Engine...</span>
+    <span id="status" class="status">Initializing Java Engine...</span>
     <div class="toolbar">
-      <button id="run-btn" onclick="runCode()" disabled="">▶ Run Main</button>
+      <button id="run-btn" onclick="runCode()" disabled>▶ Run Main</button>
       <button class="secondary" onclick="saveSelfHTML()">💾 Save IDE State (.html)</button>
     </div>
   </header>
@@ -366,7 +368,7 @@
 
     <div class="resizer" id="resizer-1"></div>
 
-    <div id="context-menu" class="context-menu" style="display: none;">
+    <div id="context-menu" class="context-menu">
       <div id="ctx-rename" class="context-menu-item">✏️ Rename</div>
       <div id="ctx-delete" class="context-menu-item danger">🗑️ Delete</div>
     </div>
@@ -416,7 +418,7 @@
     let collapsedFolders = {}; 
     let activeProject = "";
     let activeFile = "";
-    let pendingPrompt = ""; // Captures System.out.print strings for the input dialog
+    let pendingPrompt = ""; 
 
     function updateRunButtonState() {
       const runBtn = document.getElementById("run-btn");
@@ -431,6 +433,7 @@
       indentUnit: 4,
       tabSize: 4,
       indentWithTabs: false,
+      autoCloseBrackets: true,
       extraKeys: {
         "Ctrl-/": "toggleComment",
         "Cmd-/": "toggleComment",
@@ -1082,5 +1085,5 @@
 
     initEngine();
   </script>
-
-</body></html>
+</body>
+</html>

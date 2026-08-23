@@ -850,14 +850,20 @@
           return `${funcName}(${cleanedArgs}) {`;
         });
 
-        classNames.forEach(cls => {
-          const typeVarRegex = new RegExp(`\\b${cls}\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*=`, "g");
-          jsExecutable = jsExecutable.replace(typeVarRegex, "let $1 =");
+        // Unified Regex: Handles both initialized (int x = 5;) and uninitialized (int x;) declarations
+        const typeList = ["int", "String", "double", "boolean", "float", "long", "short", "byte", "char", "File", "FileWriter", "PrintWriter", "Scanner", ...classNames].join("|");
+        const typeDeclarationRegex = new RegExp(`\\b(${typeList})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|;|,|\\))`, "g");
+
+        jsExecutable = jsExecutable.replace(typeDeclarationRegex, (match, type, varName, terminator) => {
+          if (terminator === '=') {
+            return `let ${varName} =`;
+          } else if (terminator === ';') {
+            return `let ${varName};`;
+          } else {
+            return `${varName}${terminator}`;
+          }
         });
-
-        jsExecutable = jsExecutable
-          .replace(/\b(int|String|double|boolean|float|long|short|byte|char|File|FileWriter|PrintWriter|Scanner)\b\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=/g, "let $2 =");
-
+        
         jsExecutable = jsExecutable
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextInt\(\)/g, "await $1.nextInt()")
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextDouble\(\)/g, "await $1.nextDouble()")

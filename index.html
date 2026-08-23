@@ -839,10 +839,14 @@
 
         const allTypes = ["int", "double", "float", "long", "short", "byte", "boolean", "char", "String", "void", ...classNames].join("|");
         
-        jsExecutable = jsExecutable.replace(new RegExp(`\\b(public|private|protected)?\\s*(static\\s+)?(${allTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(`, "g"), "$2$4(");
+        // FIX: Properly handle method definitions without mangling class scoping or static declarations
+        jsExecutable = jsExecutable.replace(new RegExp(`\\b(public|private|protected)?\\s*(static\\s+)?(${allTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(`, "g"), (match, vis, isStatic, retType, funcName) => {
+          return `${isStatic ? 'static ' : ''}${funcName}(`;
+        });
         
-        // (Strips Java type casts like '(double)' and cleans method parameter lists)
-        jsExecutable = jsExecutable.replace(/\((int|double|float|long|short|byte|char|boolean)\)\s*/g, "");
+        // FIX: Comprehensive Type Cast removal including custom classes and object types
+        const castTypes = ["int", "double", "float", "long", "short", "byte", "char", "boolean", ...classNames].join("|");
+        jsExecutable = jsExecutable.replace(new RegExp(`\\((?:${castTypes})\\)\\s*`, "g"), "");
         
         jsExecutable = jsExecutable.replace(new RegExp(`([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{`, "g"), (match, funcName, args) => {
           if (!args.trim()) return `${funcName}() {`;

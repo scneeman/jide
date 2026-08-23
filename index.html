@@ -841,6 +841,9 @@
         
         jsExecutable = jsExecutable.replace(new RegExp(`\\b(public|private|protected)?\\s*(static\\s+)?(${allTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(`, "g"), "$2$4(");
         
+        // (Strips Java type casts like '(double)' and cleans method parameter lists)
+        jsExecutable = jsExecutable.replace(/\((int|double|float|long|short|byte|char|boolean)\)\s*/g, "");
+        
         jsExecutable = jsExecutable.replace(new RegExp(`([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{`, "g"), (match, funcName, args) => {
           if (!args.trim()) return `${funcName}() {`;
           const cleanedArgs = args.split(',').map(arg => {

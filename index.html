@@ -346,9 +346,9 @@
       <h2>Java IDE</h2>
       <span class="credit-text">♊ Created with Gemini</span>
     </div>
-    <span id="status" class="status">Initializing Java Engine...</span>
+    <span id="status" class="status" style="color: rgb(241, 250, 140);">Initializing Java Engine...</span>
     <div class="toolbar">
-      <button id="run-btn" onclick="runCode()" disabled>▶ Run Main</button>
+      <button id="run-btn" onclick="runCode()" disabled="">▶ Run Main</button>
       <button class="secondary" onclick="saveSelfHTML()">💾 Save IDE State (.html)</button>
     </div>
   </header>
@@ -362,18 +362,86 @@
           <button class="icon-btn" onclick="createNewFile()" title="Create File">+ File</button>
         </div>
       </div>
-      <div id="sidebar-tree"></div>
+      <div id="sidebar-tree"><div class="folder-group"><div class="folder-header">
+          <span class="folder-label">
+            <span class="folder-icon">▼</span> 📦 DemoInput
+          </span>
+          <div class="item-actions">
+            <button class="action-btn" title="Rename package">✏️</button>
+            <button class="action-btn" title="Add File">+ File</button>
+          </div>
+        </div><ul class="file-list "><li class="file-item">
+            <span class="file-label">☕ Main.java</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li></ul></div><div class="folder-group"><div class="folder-header">
+          <span class="folder-label">
+            <span class="folder-icon">▼</span> 📦 DemoStaticMethods
+          </span>
+          <div class="item-actions">
+            <button class="action-btn" title="Rename package">✏️</button>
+            <button class="action-btn" title="Add File">+ File</button>
+          </div>
+        </div><ul class="file-list "><li class="file-item">
+            <span class="file-label">☕ Main.java</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li></ul></div><div class="folder-group"><div class="folder-header">
+          <span class="folder-label">
+            <span class="folder-icon">▼</span> 📦 DemoFileIO
+          </span>
+          <div class="item-actions">
+            <button class="action-btn" title="Rename package">✏️</button>
+            <button class="action-btn" title="Add File">+ File</button>
+          </div>
+        </div><ul class="file-list "><li class="file-item">
+            <span class="file-label">☕ Main.java</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li><li class="file-item">
+            <span class="file-label">📄 sample.txt</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li></ul></div><div class="folder-group"><div class="folder-header">
+          <span class="folder-label">
+            <span class="folder-icon">▼</span> 📦 DemoClasses
+          </span>
+          <div class="item-actions">
+            <button class="action-btn" title="Rename package">✏️</button>
+            <button class="action-btn" title="Add File">+ File</button>
+          </div>
+        </div><ul class="file-list "><li class="file-item active">
+            <span class="file-label">☕ Main.java</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li><li class="file-item">
+            <span class="file-label">☕ Bank.java</span>
+            <div class="item-actions">
+              <button class="action-btn" title="Rename file">✏️</button>
+              <button class="action-btn delete-btn" title="Delete file">🗑️</button>
+            </div>
+          </li></ul></div></div>
     </div>
 
     <div class="resizer" id="resizer-1"></div>
 
-    <div id="context-menu" class="context-menu">
+    <div id="context-menu" class="context-menu" style="display: none;">
       <div id="ctx-rename" class="context-menu-item">✏️ Rename</div>
       <div id="ctx-delete" class="context-menu-item danger">🗑️ Delete</div>
     </div>
 
     <div class="editor-section" id="editor-pane">
-      <div id="editor-header" class="section-header">Editor — DemoInput / Main.java</div>
+      <div id="editor-header" class="section-header">Editor — DemoClasses / Main.java</div>
       <textarea id="code-editor" style="display: none;"></textarea>
     </div>
 
@@ -401,12 +469,15 @@
     "Main.java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        \n        System.out.print(\"Enter first number: \");\n        int num1 = scanner.nextInt();\n        \n        System.out.print(\"Enter second number: \");\n        int num2 = scanner.nextInt();\n        \n        System.out.println(\"Sum: \" + (num1 + num2));\n    }\n}"
   },
   "DemoStaticMethods": {
-    "Main.java": "public class Main {\n    public static void main(String[] args) {\n        int result = Calculator.add(15, 27);\n        System.out.println(\"Java Calculation Result: \" + result);\n    }\n}",
-    "Calculator.java": "public class Calculator {\n    public static int add(int a, int b) {\n        return a + b;\n    }\n    public static int multiply(int a, int b) {\n        return a * b;\n    }\n}"
+    "Main.java": "public class Main {\n    public static void main(String[] args) {\n        int result = Main.add(15, 27);\n        System.out.println(\"Java Calculation Result: \" + result);\n    }\n    \n    \n    \n    public static int add(int a, int b){\n        return a+b;\n    }\n}"
   },
   "DemoFileIO": {
     "Main.java": "import java.io.File;\nimport java.io.PrintWriter;\nimport java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        try {\n            File file = new File(\"data.txt\");\n            PrintWriter pw = new PrintWriter(file);\n            pw.println(\"Line 1: Hello from Java File I/O!\");\n            pw.println(\"Line 2: Interactive file writing works.\");\n            pw.close();\n            System.out.println(\"Successfully wrote to 'data.txt'.\");\n\n            Scanner scanner = new Scanner(file);\n            System.out.println(\"\\n--- Reading 'data.txt' ---\");\n            while (scanner.hasNextLine()) {\n                System.out.println(scanner.nextLine());\n            }\n            scanner.close();\n        } catch (Exception e) {\n            System.out.println(\"Error: \" + e.getMessage());\n        }\n    }\n}",
     "sample.txt": "This is a sample text file created in the workspace."
+  },
+  "DemoClasses": {
+    "Main.java": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello from DemoClasses!\");\n        \n        Bank b = new Bank(\"Mo\", 100);\n        b.addMoney(50);\n        b.removeMoney(10);\n        System.out.println(\"Balance: \" + b.getMoney());\n        System.out.println(b);\n    }\n}",
+    "Bank.java": "public class Bank {\n    \n    public Bank(String n, int m){\n        this.name = n;\n        this.money = m;\n    }\n    \n    public void addMoney(int p){\n        System.out.println(this.money);\n        this.money += p;\n    }\n    \n    public void removeMoney(int p){\n        if (this.money > p){\n            this.money -= p;\n        }\n        System.out.println(this.money);\n    }\n    \n    public int getMoney(){\n        System.out.println(this.money);\n        return this.money;\n    }\n    \n    public String toString(){\n        return this.name + \" has $\" + this.money;\n    }\n    \n}\n"
   }
 }
 </script>
@@ -856,28 +927,54 @@ async function runCode() {
         }
 
         // 4. Convert class headers and main entry point
-        jsExecutable = jsExecutable.replace(/public\s+class\s+/g, "class ");
-        jsExecutable = jsExecutable.replace(/public\s+static\s+void\s+main\s*\(\s*String\s*\[\s*\]\s*args\s*\)/g, "static async main()");
+          // 1. Remove package statements
+jsExecutable = jsExecutable.replace(/package\s+[a-zA-Z0-9_.]+;/g, "");
 
-        // 5. Clean Java method signatures cleanly
+// 2. Remove Java visibility modifiers (public, private, protected) from class members
+jsExecutable = jsExecutable.replace(/\b(public|private|protected)\s+/g, "");
+
+// 3. Convert class headers and main entry point
+jsExecutable = jsExecutable.replace(/class\s+/g, "class ");
+jsExecutable = jsExecutable.replace(/static\s+void\s+main\s*\(\s*String\s*\[\s*\]\s*args\s*\)/g, "static async main()");
+
+
+          
+// 4. Convert package declarations and visibility modifiers
+        jsExecutable = jsExecutable.replace(/package\s+[a-zA-Z0-9_.]+;/g, "");
+        
+        // Strip visibility keywords only when followed by type/class declarations or methods
+        jsExecutable = jsExecutable.replace(/\b(public|private|protected)\s+/g, "");
+
+        // Convert main method entry point
+        jsExecutable = jsExecutable.replace(/static\s+void\s+main\s*\(\s*String\s*\[\s*\]\s*args\s*\)/g, "static async main()");
+
+        // 5. Clean Java method signatures AND convert Constructors to constructor()
+        classNames.forEach(className => {
+          // Convert Java constructors (e.g. Bank(String n, int m) -> constructor(n, m))
+          const constructorRegex = new RegExp(`\\b${className}\\s*\\(([^)]*)\\)\\s*\\{`, "g");
+          jsExecutable = jsExecutable.replace(constructorRegex, (match, args) => {
+            if (!args.trim()) return `constructor() {`;
+            const cleanedArgs = args.split(',').map(arg => arg.trim().split(/\s+/).pop()).join(', ');
+            return `constructor(${cleanedArgs}) {`;
+          });
+        });
+
+        // Clean normal method signatures
         const knownTypes = ["int", "double", "float", "long", "short", "byte", "boolean", "char", "String", "void", "Exception", ...classNames].join("|");
-        const methodSigRegex = new RegExp(`(?:public|private|protected)?\\s*(static\\s+)?(?:${knownTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{`, "g");
+        const methodSigRegex = new RegExp(`(?:static\\s+)?(?:${knownTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{`, "g");
 
-        jsExecutable = jsExecutable.replace(methodSigRegex, (match, isStatic, funcName, args) => {
+        jsExecutable = jsExecutable.replace(methodSigRegex, (match, funcName, args) => {
+          const isStatic = match.includes("static ");
           const staticKw = isStatic ? "static " : "";
           if (!args.trim()) return `${staticKw}${funcName}() {`;
           
-          const cleanedArgs = args.split(',').map(arg => {
-            const parts = arg.trim().split(/\s+/);
-            return parts[parts.length - 1]; 
-          }).join(', ');
-
+          const cleanedArgs = args.split(',').map(arg => arg.trim().split(/\s+/).pop()).join(', ');
           return `${staticKw}${funcName}(${cleanedArgs}) {`;
         });
 
-        // 6. FIX: Convert variable declarations to 'let' without touching catch clauses or method calls
+        // 6. Convert variable declarations to 'let' FIRST
         const varDeclTypes = ["int", "String", "double", "boolean", "float", "long", "short", "byte", "char", "File", "FileWriter", "PrintWriter", "Scanner", "Exception", ...classNames].join("|");
-        const varDeclRegex = new RegExp(`(?<![a-zA-Z0-9_.])\\b(?:${varDeclTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|;|,|\\))`, "g");
+        const varDeclRegex = new RegExp(`(?<![a-zA-Z0-9_.])\\b(?:${varDeclTypes})(?:\\[\\])*\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|;|,|\\))`, "g");
 
         jsExecutable = jsExecutable.replace(varDeclRegex, (match, varName, operator) => {
           if (operator === '=') return `let ${varName} =`;
@@ -885,7 +982,7 @@ async function runCode() {
           return `${varName}${operator}`;
         });
 
-        // 7. Scanner conversions
+        // 7. Scanner conversions SECOND (after variable declarations are handled)
         jsExecutable = jsExecutable.replace(/new\s+Scanner\(\s*System\.in\s*\)/g, `new InteractiveScanner()`);
         jsExecutable = jsExecutable.replace(/new\s+Scanner\(([^)]+)\)/g, (match, target) => {
           if (target.trim() === "System.in") return match;
@@ -896,6 +993,10 @@ async function runCode() {
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextInt\(\)/g, "await $1.nextInt()")
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextDouble\(\)/g, "await $1.nextDouble()")
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextLine\(\)/g, "await $1.nextLine()");
+
+
+
+          
 
         // Mock Classes header
         const fsMockHeader = `
@@ -1085,5 +1186,6 @@ async function runCode() {
 
     initEngine();
   </script>
-</body>
-</html>
+
+
+</body></html>

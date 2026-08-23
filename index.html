@@ -344,7 +344,7 @@
   <header>
     <div class="title-container">
       <h2>Java IDE</h2>
-      <span class="credit-text">♊ Created with Google Gemini</span>
+      <span class="credit-text">♊ Created with Gemini</span>
     </div>
     <span id="status" class="status">Initializing Java Engine...</span>
     <div class="toolbar">
@@ -801,7 +801,9 @@
       updateRunButtonState();
     }
 
-    async function runCode() {
+
+
+async function runCode() {
       const outputDiv = document.getElementById("output");
       outputDiv.textContent = "";
       pendingPrompt = "";
@@ -816,19 +818,19 @@
         appendOutput("Executing " + activeProject + " / " + activeFile + "...\n");
         appendOutput("--------------------------------------------------\n");
 
+        const targetClassName = activeFile.replace(".java", "");
         const javaFiles = Object.keys(currentFiles).filter(f => f.endsWith(".java"));
         const classNames = javaFiles.map(f => f.replace(".java", ""));
         
-        let fullSource = "";
+        let jsExecutable = "";
         for (const fname of javaFiles) {
-          fullSource += currentFiles[fname] + "\n\n";
+          jsExecutable += currentFiles[fname] + "\n\n";
         }
 
-        let jsExecutable = fullSource
-          .replace(/import java\.util\.Scanner;/g, "")
-          .replace(/import java\.io\..*;/g, "")
-          .replace(/public class /g, "class ")
-          .replace(/public static void main\(String\[\] args\)/g, "static async main()")
+        // 1. Clean imports and output functions
+        jsExecutable = jsExecutable
+          .replace(/import\s+java\..*?;/g, "")
+          .replace(/telemetry\.addData\(([^,]+),\s*([^)]+)\);/g, "javaTelemetry($1, $2);")
           .replace(/System\.out\.println\((.*?)\);/g, "javaLog($1);")
           .replace(/System\.out\.print\((.*?)\);/g, "javaLogNoNL($1);")
           .replace(/Integer\.parseInt\((.*?)\)/g, "parseInt($1)")
@@ -836,50 +838,69 @@
           .replace(/\.nextDouble\(\)/g, ".nextDouble()")
           .replace(/\.nextLine\(\)/g, ".nextLine()");
 
-        const allTypes = ["int", "double", "float", "long", "short", "byte", "boolean", "char", "String", "void", ...classNames].join("|");
+        // 2. FIX: Convert Java catch blocks before variable declaration step
+        // Converts 'catch (Exception e)' or 'catch (IOException e)' directly to 'catch (e)'
+        jsExecutable = jsExecutable.replace(/catch\s*\(\s*[a-zA-Z0-9_.]+\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\)/g, "catch ($1)");
+
+        // 3. FIX: Type Cast Translation
+        // Truncate integer types: (int) 12.5 -> Math.trunc(12.5)
+        jsExecutable = jsExecutable.replace(/\(\s*(int|long|short|byte|char)\s*\)\s*([a-zA-Z0-9_.]+|\([^\)]+\))/g, "Math.trunc($2)");
         
-        // FIX: Properly handle method definitions without mangling class scoping or static declarations
-        jsExecutable = jsExecutable.replace(new RegExp(`\\b(public|private|protected)?\\s*(static\\s+)?(${allTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(`, "g"), (match, vis, isStatic, retType, funcName) => {
-          return `${isStatic ? 'static ' : ''}${funcName}(`;
-        });
+        // Convert floating point casts: (double) x -> Number(x)
+        jsExecutable = jsExecutable.replace(/\(\s*(double|float)\s*\)\s*([a-zA-Z0-9_.]+|\([^\)]+\))/g, "Number($2)");
         
-        // FIX: Comprehensive Type Cast removal including custom classes and object types
-        const castTypes = ["int", "double", "float", "long", "short", "byte", "char", "boolean", ...classNames].join("|");
-        jsExecutable = jsExecutable.replace(new RegExp(`\\((?:${castTypes})\\)\\s*`, "g"), "");
-        
-        jsExecutable = jsExecutable.replace(new RegExp(`([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{`, "g"), (match, funcName, args) => {
-          if (!args.trim()) return `${funcName}() {`;
+        // Strip custom class and exception casts: (MyClass) obj -> obj
+        const customClasses = ["String", "Exception", "IOException", ...classNames].filter(Boolean).join("|");
+        if (customClasses) {
+          jsExecutable = jsExecutable.replace(new RegExp(`\\(\\s*(?:${customClasses})\\s*\\)\\s*`, "g"), "");
+        }
+
+        // 4. Convert class headers and main entry point
+        jsExecutable = jsExecutable.replace(/public\s+class\s+/g, "class ");
+        jsExecutable = jsExecutable.replace(/public\s+static\s+void\s+main\s*\(\s*String\s*\[\s*\]\s*args\s*\)/g, "static async main()");
+
+        // 5. Clean Java method signatures cleanly
+        const knownTypes = ["int", "double", "float", "long", "short", "byte", "boolean", "char", "String", "void", "Exception", ...classNames].join("|");
+        const methodSigRegex = new RegExp(`(?:public|private|protected)?\\s*(static\\s+)?(?:${knownTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{`, "g");
+
+        jsExecutable = jsExecutable.replace(methodSigRegex, (match, isStatic, funcName, args) => {
+          const staticKw = isStatic ? "static " : "";
+          if (!args.trim()) return `${staticKw}${funcName}() {`;
+          
           const cleanedArgs = args.split(',').map(arg => {
             const parts = arg.trim().split(/\s+/);
-            return parts.length > 1 ? parts[parts.length - 1] : arg.trim();
+            return parts[parts.length - 1]; 
           }).join(', ');
-          return `${funcName}(${cleanedArgs}) {`;
+
+          return `${staticKw}${funcName}(${cleanedArgs}) {`;
         });
 
-        // Unified Regex: Handles both initialized (int x = 5;) and uninitialized (int x;) declarations
-        const typeList = ["int", "String", "double", "boolean", "float", "long", "short", "byte", "char", "File", "FileWriter", "PrintWriter", "Scanner", ...classNames].join("|");
-        const typeDeclarationRegex = new RegExp(`\\b(${typeList})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|;|,|\\))`, "g");
+        // 6. FIX: Convert variable declarations to 'let' without touching catch clauses or method calls
+        const varDeclTypes = ["int", "String", "double", "boolean", "float", "long", "short", "byte", "char", "File", "FileWriter", "PrintWriter", "Scanner", "Exception", ...classNames].join("|");
+        const varDeclRegex = new RegExp(`(?<![a-zA-Z0-9_.])\\b(?:${varDeclTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|;|,|\\))`, "g");
 
-        jsExecutable = jsExecutable.replace(typeDeclarationRegex, (match, type, varName, terminator) => {
-          if (terminator === '=') {
-            return `let ${varName} =`;
-          } else if (terminator === ';') {
-            return `let ${varName};`;
-          } else {
-            return `${varName}${terminator}`;
-          }
+        jsExecutable = jsExecutable.replace(varDeclRegex, (match, varName, operator) => {
+          if (operator === '=') return `let ${varName} =`;
+          if (operator === ';') return `let ${varName};`;
+          return `${varName}${operator}`;
         });
-        
+
+        // 7. Scanner conversions
+        jsExecutable = jsExecutable.replace(/new\s+Scanner\(\s*System\.in\s*\)/g, `new InteractiveScanner()`);
+        jsExecutable = jsExecutable.replace(/new\s+Scanner\(([^)]+)\)/g, (match, target) => {
+          if (target.trim() === "System.in") return match;
+          return `new VirtualScanner(${target})`;
+        });
+
         jsExecutable = jsExecutable
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextInt\(\)/g, "await $1.nextInt()")
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextDouble\(\)/g, "await $1.nextDouble()")
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextLine\(\)/g, "await $1.nextLine()");
 
+        // Mock Classes header
         const fsMockHeader = `
           class InteractiveScanner {
-            constructor() {
-              this.tokens = [];
-            }
+            constructor() { this.tokens = []; }
             async _ensureToken() {
               while (this.tokens.length === 0) {
                 let promptMsg = pendingPrompt || "Scanner input requested:";
@@ -888,52 +909,29 @@
                 if (input === null) return null;
                 appendOutput(input + "\\n");
                 let parts = input.trim().split(/\\s+/).filter(Boolean);
-                if (parts.length > 0) {
-                  this.tokens.push(...parts);
-                } else {
-                  this.tokens.push("");
-                }
+                if (parts.length > 0) { this.tokens.push(...parts); } else { this.tokens.push(""); }
               }
             }
-            async nextInt() {
-              await this._ensureToken();
-              let val = this.tokens.shift();
-              return parseInt(val, 10) || 0;
-            }
-            async nextDouble() {
-              await this._ensureToken();
-              let val = this.tokens.shift();
-              return parseFloat(val) || 0.0;
-            }
+            async nextInt() { await this._ensureToken(); return parseInt(this.tokens.shift(), 10) || 0; }
+            async nextDouble() { await this._ensureToken(); return parseFloat(this.tokens.shift()) || 0.0; }
             async nextLine() {
-              if (this.tokens.length > 0) {
-                let line = this.tokens.join(" ");
-                this.tokens = [];
-                return line;
-              }
+              if (this.tokens.length > 0) { let line = this.tokens.join(" "); this.tokens = []; return line; }
               let promptMsg = pendingPrompt || "Scanner input requested:";
               pendingPrompt = "";
               let input = await requestUserInput(promptMsg);
               appendOutput((input || "") + "\\n");
               return input || "";
             }
-            hasNextLine() {
-              return true;
-            }
+            hasNextLine() { return true; }
             close() {}
           }
-          class File {
-            constructor(path) { this.path = path; }
-          }
+          class File { constructor(path) { this.path = path; } }
           class FileWriter {
             constructor(path, append = false) {
-              this.path = path;
-              this.append = append;
+              this.path = path; this.append = append;
               if (!this.append) window.virtualFS[this.path] = "";
             }
-            write(str) {
-              window.virtualFS[this.path] = (window.virtualFS[this.path] || "") + str;
-            }
+            write(str) { window.virtualFS[this.path] = (window.virtualFS[this.path] || "") + str; }
             close() {}
           }
           class PrintWriter {
@@ -951,56 +949,44 @@
                 const content = window.virtualFS[source.path] || "";
                 this.lines = content.split('\\n');
                 if (this.lines.length > 0 && this.lines[this.lines.length - 1] === "") this.lines.pop();
-              } else {
-                this.lines = [];
-              }
+              } else { this.lines = []; }
               this.cursor = 0;
             }
-            async nextInt() {
-              let line = this.nextLine();
-              return parseInt(line, 10) || 0;
-            }
-            async nextDouble() {
-              let line = this.nextLine();
-              return parseFloat(line) || 0.0;
-            }
-            async nextLine() {
-              return this.lines[this.cursor++] || "";
-            }
-            hasNextLine() {
-              return this.cursor < this.lines.length;
-            }
+            async nextInt() { return parseInt(this.nextLine(), 10) || 0; }
+            async nextDouble() { return parseFloat(this.nextLine()) || 0.0; }
+            async nextLine() { return this.lines[this.cursor++] || ""; }
+            hasNextLine() { return this.cursor < this.lines.length; }
             close() {}
           }
+          const telemetry = { addData: (caption, value) => { window.javaTelemetry(caption, value); } };
         `;
-
-        jsExecutable = jsExecutable.replace(/new Scanner\(System\.in\)/g, `new InteractiveScanner()`);
-        jsExecutable = jsExecutable.replace(/new Scanner\(([^)]+)\)/g, (match, target) => {
-          if (target.trim() === "System.in") return match;
-          return `new VirtualScanner(${target})`;
-        });
 
         window.virtualFS = {};
         for (const [fname, fcontent] of Object.entries(currentFiles)) {
           window.virtualFS[fname] = fcontent;
         }
 
-        jsExecutable = fsMockHeader + "\n" + jsExecutable + `\nreturn Main.main();`;
+        jsExecutable = fsMockHeader + "\n" + jsExecutable + `\n
+        if (typeof ${targetClassName} !== 'undefined' && typeof ${targetClassName}.main === 'function') {
+            return ${targetClassName}.main();
+        } else {
+            throw new Error("No runnable main() method found in class '${targetClassName}'.");
+        }`;
 
-        window.javaLog = function(val) {
+        window.javaTelemetry = function(caption, val) {
           pendingPrompt = "";
-          appendOutput(val + "\n");
+          if (val === "" || val === undefined) appendOutput(caption + "\n");
+          else appendOutput(caption + ": " + val + "\n");
         };
 
-        window.javaLogNoNL = function(val) {
-          pendingPrompt = String(val);
-          appendOutput(val);
-        };
+        window.javaLog = function(val) { pendingPrompt = ""; appendOutput(val + "\n"); };
+        window.javaLogNoNL = function(val) { pendingPrompt = String(val); appendOutput(val); };
 
         const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
         const execute = new AsyncFunction(jsExecutable);
         await execute();
 
+        delete window.javaTelemetry;
         delete window.javaLog;
         delete window.javaLogNoNL;
 
@@ -1015,6 +1001,8 @@
         appendOutput(`\nRuntime Error:\n${err.message}`);
       }
     }
+
+      
 
     function requestUserInput(promptText) {
       return new Promise((resolve) => {

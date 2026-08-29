@@ -1,3 +1,9 @@
+Currently no support for arrays
+
+no support for str.contains()
+
+
+
 Known bugs:
 
 When a method is written in the Main class, you must use the Class identifier, for example:

@@ -865,6 +865,9 @@
     }
 
     function initEngine() {
+      // Add Java Math angle conversion polyfills
+      Math.toRadians = Math.toRadians || function(degrees) { return degrees * (Math.PI / 180); };
+      Math.toDegrees = Math.toDegrees || function(radians) { return radians * (180 / Math.PI); };
       isJavaReady = true;
       document.getElementById("status").innerText = "Java Engine Ready";
       document.getElementById("status").style.color = "#50fa7b";

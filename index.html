@@ -910,7 +910,26 @@ async function runCode() {
           .replace(/Integer\.parseInt\((.*?)\)/g, "parseInt($1)")
           .replace(/\.nextInt\(\)/g, ".nextInt()")
           .replace(/\.nextDouble\(\)/g, ".nextDouble()")
-          .replace(/\.nextLine\(\)/g, ".nextLine()");
+          .replace(/\.nextLine\(\)/g, ".nextLine()")
+          .replace(/\.contains\(/g, ".includes(");
+
+        // Add array-specific conversions
+        jsExecutable = jsExecutable
+        // 1. Convert Arrays.sort(arr) -> arr.sort((a, b) => a - b) (numeric sort)
+        .replace(/Arrays\.sort\(([^)]+)\)/g, "$1.sort((a, b) => a - b)")
+
+        // 2. Convert Arrays.toString(arr) -> JSON.stringify(arr)
+        .replace(/Arrays\.toString\(([^)]+)\)/g, "JSON.stringify($1)")
+
+        // 3. Convert explicit array instantiations: new int[]{1, 2} or new String[]{"a"} -> [1, 2]
+        .replace(/new\s+[a-zA-Z0-9_.]+\s*\[\s*\]\s*\{([^}]+)\}/g, "[$1]")
+
+        // 4. Convert sized array creations: new int[5] -> new Array(5).fill(0)
+        .replace(/new\s+[a-zA-Z0-9_.]+\s*\[([^\]]+)\]/g, "new Array($1).fill(0)")
+
+        // 5. Convert array inline initializers with type declarations: int[] arr = {1, 2} -> let arr = [1, 2]
+        .replace(/(?:int|double|float|String|boolean|char)\s*\[\s*\]\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*\{([^}]+)\}/g, "let $1 = [$2]");
+          
 
         // 2. FIX: Convert Java catch blocks before variable declaration step
         // Converts 'catch (Exception e)' or 'catch (IOException e)' directly to 'catch (e)'
@@ -930,19 +949,19 @@ async function runCode() {
         }
 
         // 4. Convert class headers and main entry point
-          // 1. Remove package statements
-jsExecutable = jsExecutable.replace(/package\s+[a-zA-Z0-9_.]+;/g, "");
+        // 1. Remove package statements
+        jsExecutable = jsExecutable.replace(/package\s+[a-zA-Z0-9_.]+;/g, "");
 
-// 2. Remove Java visibility modifiers (public, private, protected) from class members
-jsExecutable = jsExecutable.replace(/\b(public|private|protected)\s+/g, "");
+        // 2. Remove Java visibility modifiers (public, private, protected) from class members
+        jsExecutable = jsExecutable.replace(/\b(public|private|protected)\s+/g, "");
 
-// 3. Convert class headers and main entry point
-jsExecutable = jsExecutable.replace(/class\s+/g, "class ");
-jsExecutable = jsExecutable.replace(/static\s+void\s+main\s*\(\s*String\s*\[\s*\]\s*args\s*\)/g, "static async main()");
+        // 3. Convert class headers and main entry point
+        jsExecutable = jsExecutable.replace(/class\s+/g, "class ");
+        jsExecutable = jsExecutable.replace(/static\s+void\s+main\s*\(\s*String\s*\[\s*\]\s*args\s*\)/g, "static async main()");
 
 
           
-// 4. Convert package declarations and visibility modifiers
+        // 4. Convert package declarations and visibility modifiers
         jsExecutable = jsExecutable.replace(/package\s+[a-zA-Z0-9_.]+;/g, "");
         
         // Strip visibility keywords only when followed by type/class declarations or methods
@@ -974,6 +993,10 @@ jsExecutable = jsExecutable.replace(/static\s+void\s+main\s*\(\s*String\s*\[\s*\
           const cleanedArgs = args.split(',').map(arg => arg.trim().split(/\s+/).pop()).join(', ');
           return `${staticKw}${funcName}(${cleanedArgs}) {`;
         });
+
+        // Convert Java enhanced for-each loops: for (int n : numbers) -> for (let n of numbers)
+        jsExecutable = jsExecutable.replace(
+            /for\s*\(\s*(?:[a-zA-Z0-9_<>.,\s]+)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([^)]+)\)/g,"for (let $1 of $2)");
 
         // 6. Convert variable declarations to 'let' FIRST
         const varDeclTypes = ["int", "String", "double", "boolean", "float", "long", "short", "byte", "char", "File", "FileWriter", "PrintWriter", "Scanner", "Exception", ...classNames].join("|");

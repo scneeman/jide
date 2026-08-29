@@ -1,8 +1,3 @@
-Currently no support for arrays
-
-no support for str.contains()
-
-
 
 Known bugs:
 

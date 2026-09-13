@@ -1,8 +1,6 @@
 
 Known bugs:
 
-semi-colons not required
-
 
 When a method is written in the Main class, you must use the Class identifier, for example:
 Main.method()

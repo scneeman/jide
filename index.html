@@ -877,6 +877,7 @@
 
 
 
+
 async function runCode() {
       const outputDiv = document.getElementById("output");
       outputDiv.textContent = "";
@@ -892,8 +893,35 @@ async function runCode() {
         appendOutput("Executing " + activeProject + " / " + activeFile + "...\n");
         appendOutput("--------------------------------------------------\n");
 
-        const targetClassName = activeFile.replace(".java", "");
+        // --- SEMICOLON VALIDATION STEP ---
         const javaFiles = Object.keys(currentFiles).filter(f => f.endsWith(".java"));
+        for (const fname of javaFiles) {
+          const lines = currentFiles[fname].split("\n");
+          for (let i = 0; i < lines.length; i++) {
+            // Strip single-line comments and trim white spaces
+            let line = lines[i].replace(/\/\/.*$/, "").trim();
+
+            // Skip empty lines, block comments, structural braces, package, imports, or class/method headers
+            if (
+              !line || 
+              line.startsWith("/*") || 
+              line.startsWith("*") || 
+              line.endsWith("{") || 
+              line.endsWith("}") || 
+              /^(public|private|protected|class|interface|enum|if|else|for|while|try|catch|finally)\b/.test(line)
+            ) {
+              continue;
+            }
+
+            // Throw syntax error if line does not end with a semicolon
+            if (!line.endsWith(";")) {
+              throw new SyntaxError(`Missing semicolon ';' in ${fname} at line ${i + 1}:\n  "${lines[i].trim()}"`);
+            }
+          }
+        }
+        // ----------------------------------
+
+        const targetClassName = activeFile.replace(".java", "");
         const classNames = javaFiles.map(f => f.replace(".java", ""));
         
         let jsExecutable = "";
@@ -915,64 +943,32 @@ async function runCode() {
 
         // Add array-specific conversions
         jsExecutable = jsExecutable
-        // 1. Convert Arrays.sort(arr) -> arr.sort((a, b) => a - b) (numeric sort)
-        .replace(/Arrays\.sort\(([^)]+)\)/g, "$1.sort((a, b) => a - b)")
-
-        // 2. Convert Arrays.toString(arr) -> JSON.stringify(arr)
-        .replace(/Arrays\.toString\(([^)]+)\)/g, "JSON.stringify($1)")
-
-        // 3. Convert explicit array instantiations: new int[]{1, 2} or new String[]{"a"} -> [1, 2]
-        .replace(/new\s+[a-zA-Z0-9_.]+\s*\[\s*\]\s*\{([^}]+)\}/g, "[$1]")
-
-        // 4. Convert sized array creations: new int[5] -> new Array(5).fill(0)
-        .replace(/new\s+[a-zA-Z0-9_.]+\s*\[([^\]]+)\]/g, "new Array($1).fill(0)")
-
-        // 5. Convert array inline initializers with type declarations: int[] arr = {1, 2} -> let arr = [1, 2]
-        .replace(/(?:int|double|float|String|boolean|char)\s*\[\s*\]\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*\{([^}]+)\}/g, "let $1 = [$2]");
+          .replace(/Arrays\.sort\(([^)]+)\)/g, "$1.sort((a, b) => a - b)")
+          .replace(/Arrays\.toString\(([^)]+)\)/g, "JSON.stringify($1)")
+          .replace(/new\s+[a-zA-Z0-9_.]+\s*\[\s*\]\s*\{([^}]+)\}/g, "[$1]")
+          .replace(/new\s+[a-zA-Z0-9_.]+\s*\[([^\]]+)\]/g, "new Array($1).fill(0)")
+          .replace(/(?:int|double|float|String|boolean|char)\s*\[\s*\]\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*\{([^}]+)\}/g, "let $1 = [$2]");
           
-
         // 2. FIX: Convert Java catch blocks before variable declaration step
-        // Converts 'catch (Exception e)' or 'catch (IOException e)' directly to 'catch (e)'
         jsExecutable = jsExecutable.replace(/catch\s*\(\s*[a-zA-Z0-9_.]+\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\)/g, "catch ($1)");
 
         // 3. FIX: Type Cast Translation
-        // Truncate integer types: (int) 12.5 -> Math.trunc(12.5)
         jsExecutable = jsExecutable.replace(/\(\s*(int|long|short|byte|char)\s*\)\s*([a-zA-Z0-9_.]+|\([^\)]+\))/g, "Math.trunc($2)");
-        
-        // Convert floating point casts: (double) x -> Number(x)
         jsExecutable = jsExecutable.replace(/\(\s*(double|float)\s*\)\s*([a-zA-Z0-9_.]+|\([^\)]+\))/g, "Number($2)");
         
-        // Strip custom class and exception casts: (MyClass) obj -> obj
         const customClasses = ["String", "Exception", "IOException", ...classNames].filter(Boolean).join("|");
         if (customClasses) {
           jsExecutable = jsExecutable.replace(new RegExp(`\\(\\s*(?:${customClasses})\\s*\\)\\s*`, "g"), "");
         }
 
         // 4. Convert class headers and main entry point
-        // 1. Remove package statements
         jsExecutable = jsExecutable.replace(/package\s+[a-zA-Z0-9_.]+;/g, "");
-
-        // 2. Remove Java visibility modifiers (public, private, protected) from class members
         jsExecutable = jsExecutable.replace(/\b(public|private|protected)\s+/g, "");
-
-        // 3. Convert class headers and main entry point
         jsExecutable = jsExecutable.replace(/class\s+/g, "class ");
-        jsExecutable = jsExecutable.replace(/static\s+void\s+main\s*\(\s*String\s*\[\s*\]\s*args\s*\)/g, "static async main()");
-
-
-          
-        // 4. Convert package declarations and visibility modifiers
-        jsExecutable = jsExecutable.replace(/package\s+[a-zA-Z0-9_.]+;/g, "");
-        
-        // Strip visibility keywords only when followed by type/class declarations or methods
-        jsExecutable = jsExecutable.replace(/\b(public|private|protected)\s+/g, "");
-
-        // Convert main method entry point
         jsExecutable = jsExecutable.replace(/static\s+void\s+main\s*\(\s*String\s*\[\s*\]\s*args\s*\)/g, "static async main()");
 
         // 5. Clean Java method signatures AND convert Constructors to constructor()
         classNames.forEach(className => {
-          // Convert Java constructors (e.g. Bank(String n, int m) -> constructor(n, m))
           const constructorRegex = new RegExp(`\\b${className}\\s*\\(([^)]*)\\)\\s*\\{`, "g");
           jsExecutable = jsExecutable.replace(constructorRegex, (match, args) => {
             if (!args.trim()) return `constructor() {`;
@@ -981,7 +977,6 @@ async function runCode() {
           });
         });
 
-        // Clean normal method signatures
         const knownTypes = ["int", "double", "float", "long", "short", "byte", "boolean", "char", "String", "void", "Exception", ...classNames].join("|");
         const methodSigRegex = new RegExp(`(?:static\\s+)?(?:${knownTypes})\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{`, "g");
 
@@ -994,7 +989,6 @@ async function runCode() {
           return `${staticKw}${funcName}(${cleanedArgs}) {`;
         });
 
-        // Convert Java enhanced for-each loops: for (int n : numbers) -> for (let n of numbers)
         jsExecutable = jsExecutable.replace(
             /for\s*\(\s*(?:[a-zA-Z0-9_<>.,\s]+)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([^)]+)\)/g,"for (let $1 of $2)");
 
@@ -1008,7 +1002,7 @@ async function runCode() {
           return `${varName}${operator}`;
         });
 
-        // 7. Scanner conversions SECOND (after variable declarations are handled)
+        // 7. Scanner conversions SECOND
         jsExecutable = jsExecutable.replace(/new\s+Scanner\(\s*System\.in\s*\)/g, `new InteractiveScanner()`);
         jsExecutable = jsExecutable.replace(/new\s+Scanner\(([^)]+)\)/g, (match, target) => {
           if (target.trim() === "System.in") return match;
@@ -1019,10 +1013,6 @@ async function runCode() {
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextInt\(\)/g, "await $1.nextInt()")
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextDouble\(\)/g, "await $1.nextDouble()")
           .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\.nextLine\(\)/g, "await $1.nextLine()");
-
-
-
-          
 
         // Mock Classes header
         const fsMockHeader = `
